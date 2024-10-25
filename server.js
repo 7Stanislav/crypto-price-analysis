@@ -24,7 +24,7 @@ app.get("/api/price-history/:pair", async (req, res) => {
   const { pair } = req.params;
   try {
     const response = await axios.get(
-      `https://api.coingecko.com/api/v3/coins/${pair}/market_chart?vs_currency=usd&days=7`
+      `https://api.coingecko.com/api/v3/coins/${pair}/market_chart?vs_currency=usd&days=365`
     );
     res.json(response.data);
   } catch (error) {
