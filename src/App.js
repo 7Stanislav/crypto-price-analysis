@@ -1,37 +1,60 @@
+// src/App.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./App.css";
+import Chart from "chart.js/auto";
+import { Line } from "react-chartjs-2";
 
 function App() {
-  const [price, setPrice] = useState(null);
-  const [symbol, setSymbol] = useState("bitcoin"); // По умолчанию Bitcoin
-
-  const fetchPrice = async () => {
-    try {
-      const response = await axios.get(
-        `http://localhost:5001/api/price/${symbol}`
-      );
-      setPrice(response.data[symbol].usd);
-    } catch (error) {
-      console.error("Ошибка при получении цены:", error);
-    }
-  };
+  const [pair, setPair] = useState("bitcoin");
+  const [priceData, setPriceData] = useState([]);
+  const [labels, setLabels] = useState([]);
 
   useEffect(() => {
-    fetchPrice();
-  }, [symbol]);
+    const fetchPriceHistory = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5001/api/price-history/${pair}`
+        );
+        const prices = response.data.prices.map((item) => item[1]);
+        const timestamps = response.data.prices.map((item) =>
+          new Date(item[0]).toLocaleDateString()
+        );
+
+        setPriceData(prices);
+        setLabels(timestamps);
+      } catch (error) {
+        console.error("Error fetching price history:", error);
+      }
+    };
+
+    if (pair) fetchPriceHistory();
+  }, [pair]);
 
   return (
-    <div className="App">
-      <h1>
-        Цена {symbol.toUpperCase()}: {price ? `$${price}` : "Загрузка..."}
-      </h1>
-      <button onClick={() => setSymbol("ethereum")}>
-        Получить цену Ethereum
-      </button>
-      <button onClick={() => setSymbol("litecoin")}>
-        Получить цену Litecoin
-      </button>
+    <div>
+      <h1>Crypto Price Analysis</h1>
+      <select value={pair} onChange={(e) => setPair(e.target.value)}>
+        <option value="bitcoin">Bitcoin</option>
+        <option value="ethereum">Ethereum</option>
+        <option value="dogecoin">Dogecoin</option>
+      </select>
+
+      {priceData.length > 0 && (
+        <Line
+          data={{
+            labels: labels,
+            datasets: [
+              {
+                label: `${pair} Price (USD)`,
+                data: priceData,
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+              },
+            ],
+          }}
+          options={{ responsive: true }}
+        />
+      )}
     </div>
   );
 }
