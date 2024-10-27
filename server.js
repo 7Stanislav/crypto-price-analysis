@@ -15,8 +15,8 @@ app.get("/api/price/:pair", async (req, res) => {
     );
     res.json(response.data);
   } catch (error) {
-    console.error("Error fetching price data:", error);
-    res.status(500).json({ error: "Error fetching price data" });
+    console.error("Ошибка при получении данных о цене:", error);
+    res.status(500).json({ error: "Ошибка при получении данных о цене" });
   }
 });
 
@@ -28,11 +28,13 @@ app.get("/api/price-history/:pair", async (req, res) => {
     );
     res.json(response.data);
   } catch (error) {
-    console.error("Error fetching price history data:", error);
-    res.status(500).json({ error: "Error fetching price history data" });
+    console.error("Ошибка при получении данных о ценах за историю:", error);
+    res
+      .status(500)
+      .json({ error: "Ошибка при получении данных о ценах за историю" });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Сервер запущен на порту ${PORT}`);
 });
