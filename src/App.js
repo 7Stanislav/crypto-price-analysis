@@ -1,140 +1,216 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
 import * as tf from "@tensorflow/tfjs";
 
+ChartJS.register(
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
+  Filler
+);
+
 function App() {
-  const [futureDate, setFutureDate] = useState("2024-11-24");
-  const [predictedPrice, setPredictedPrice] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [pair, setPair] = useState("bitcoin");
   const [priceData, setPriceData] = useState([]);
+  const [labels, setLabels] = useState([]);
+  const [futureDate, setFutureDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [predictedPrice, setPredictedPrice] = useState(null);
+  const [error, setError] = useState("");
+
+  const cryptoOptions = [
+    { value: "bitcoin", label: "Bitcoin" },
+    { value: "ethereum", label: "Ethereum" },
+    { value: "dogecoin", label: "Dogecoin" },
+  ];
 
   useEffect(() => {
     const fetchPriceHistory = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5001/api/price-history/bitcoin"
+          `http://localhost:5001/api/price-history/${pair}`
         );
         const prices = response.data.prices.map((item) => item[1]);
-
-        if (prices.length < 365) {
-          setError(
-            "Недостаточно данных для обучения модели (необходимы 365 дней)"
-          );
-          return;
-        }
+        const timestamps = response.data.prices.map((item) =>
+          new Date(item[0]).toLocaleDateString()
+        );
 
         setPriceData(prices);
-      } catch (err) {
-        console.error("Ошибка при получении данных:", err);
+        setLabels(timestamps);
+      } catch (error) {
+        console.error("Error fetching price history:", error);
         setError("Ошибка при получении данных");
       }
     };
 
     fetchPriceHistory();
-  }, []);
+  }, [pair]);
 
-  const trainModel = async () => {
-    if (priceData.length < 365) {
-      setError("Недостаточно данных для обучения модели");
-      return;
-    }
+  const handleForecast = async () => {
+    if (!futureDate) return;
 
-    // Подготовка данных для обучения с нормализацией
-    const trainingData = priceData.slice(-365); // Берем последние 365 значений
-    const minPrice = Math.min(...trainingData);
-    const maxPrice = Math.max(...trainingData);
-    const normalizedData = trainingData.map(
-      (price) => (price - minPrice) / (maxPrice - minPrice)
-    );
-
-    const xs = [];
-    const ys = [];
-
-    for (let i = 0; i < normalizedData.length - 1; i++) {
-      xs.push([[normalizedData[i]]]); // Каждую цену оборачиваем в массив
-      ys.push([normalizedData[i + 1]]);
-    }
-
-    console.log("Обучающие данные:", normalizedData); // Логируем обучающие данные
-    console.log("xs:", xs); // Логируем xs
-    console.log("ys:", ys); // Логируем ys
-
-    try {
-      const xsTensor = tf.tensor3d(xs); // 3D тензор
-      const ysTensor = tf.tensor2d(ys); // 2D тензор
-
-      console.log("xs shape:", xsTensor.shape);
-      console.log("ys shape:", ysTensor.shape);
-
-      const model = tf.sequential();
-      model.add(
-        tf.layers.lstm({ units: 20, inputShape: [1, 1], dropout: 0.2 })
-      );
-      model.add(tf.layers.dense({ units: 1 }));
-      model.compile({ loss: "meanSquaredError", optimizer: "adam" });
-
-      setLoading(true);
-      await model.fit(xsTensor, ysTensor, {
-        epochs: 100,
-        callbacks: {
-          onEpochEnd: (epoch, logs) => {
-            console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
-          },
-        },
-      });
-
-      const forecastPrice = await predictFuturePrice(
-        model,
-        normalizedData,
-        minPrice,
-        maxPrice
-      );
-      setPredictedPrice(forecastPrice);
-      setLoading(false);
-    } catch (err) {
-      console.error("Ошибка при обучении модели:", err);
-      setError("Ошибка при обучении модели. Проверьте данные.");
-      setLoading(false);
-    }
-  };
-
-  const predictFuturePrice = async (
-    model,
-    normalizedData,
-    minPrice,
-    maxPrice
-  ) => {
-    let lastPrice = normalizedData[normalizedData.length - 1];
+    setLoading(true);
+    const startTime = Date.now();
     const daysToForecast = Math.ceil(
       (new Date(futureDate) - new Date()) / (1000 * 60 * 60 * 24)
     );
 
-    for (let i = 0; i < daysToForecast; i++) {
-      const input = tf.tensor3d([[[lastPrice]]]); // 3D тензор
-      lastPrice = model.predict(input).dataSync()[0];
+    if (daysToForecast > 90) {
+      alert("Максимальный срок прогнозирования - 90 дней.");
+      setLoading(false);
+      return;
     }
 
-    // Декодируем нормализованное значение в исходное
-    return lastPrice * (maxPrice - minPrice) + minPrice;
+    if (priceData.length < 365) {
+      alert("Недостаточно данных для обучения модели (необходимы 365 дней)");
+      setLoading(false);
+      return;
+    }
+
+    const trainingData = priceData.slice(-365);
+    const xs = tf.tensor3d(trainingData.slice(0, -1).map((price) => [[price]]));
+    const ys = tf.tensor2d(trainingData.slice(1).map((price) => [price]));
+
+    const model = tf.sequential();
+    model.add(tf.layers.lstm({ units: 20, inputShape: [1, 1], dropout: 0.2 }));
+    model.add(tf.layers.dense({ units: 1 }));
+    model.compile({ loss: "meanSquaredError", optimizer: "adam" });
+
+    await model.fit(xs, ys, {
+      epochs: 100,
+      callbacks: {
+        onEpochEnd: async (epoch, logs) => {
+          const elapsed = Date.now() - startTime;
+          const remaining = Math.max(
+            0,
+            (100 - epoch) * (elapsed / (epoch + 1))
+          );
+          setTimeRemaining(Math.ceil(remaining / 1000));
+        },
+      },
+    });
+
+    let lastPrice = trainingData[trainingData.length - 1];
+    let futurePrice = lastPrice;
+
+    // Применение отклонений с увеличением каждые 3 дня
+    for (let i = 0; i < daysToForecast; i++) {
+      const input = tf.tensor3d([[[futurePrice]]]);
+      const basePrediction = model.predict(input).dataSync()[0];
+
+      const deviationPercentage = Math.min(30, Math.floor(i / 3) + 1); // Отклонение 1% каждые 3 дня, максимум 30%
+      const deviationFactor = deviationPercentage / 100;
+
+      // Генерируем случайное отклонение в пределах отклонения
+      const randomDeviation =
+        1 + (Math.random() * deviationFactor * 2 - deviationFactor);
+      futurePrice = basePrediction * randomDeviation;
+
+      // Ограничиваем будущую цену в пределах ±30% от текущей цены
+      const lowerBound = lastPrice * 0.7;
+      const upperBound = lastPrice * 1.3;
+      futurePrice = Math.max(lowerBound, Math.min(futurePrice, upperBound));
+    }
+
+    setPredictedPrice(futurePrice);
+    setLoading(false);
   };
 
   return (
     <div>
-      <h1>Прогнозируемая цена Bitcoin на {futureDate}</h1>
+      <h1>Crypto Price Analysis</h1>
+      <select value={pair} onChange={(e) => setPair(e.target.value)}>
+        {cryptoOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+
       <input
         type="date"
         value={futureDate}
         onChange={(e) => setFutureDate(e.target.value)}
+        max={
+          new Date(new Date().setDate(new Date().getDate() + 90))
+            .toISOString()
+            .split("T")[0]
+        }
       />
-      <button onClick={trainModel}>Прогнозировать</button>
-      {loading && <p>Загрузка...</p>}
+      <button onClick={handleForecast}>Прогнозировать</button>
+
+      {loading && <p>Время до завершения расчета: {timeRemaining} секунд</p>}
       {predictedPrice !== null && (
         <p>
           Прогнозируемая цена на {futureDate} - ${predictedPrice.toFixed(2)}
         </p>
       )}
       {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {priceData.length > 0 && (
+        <Line
+          data={{
+            labels: [
+              ...labels,
+              new Date(futureDate).toLocaleDateString(), // Добавляем только выбранную дату
+            ],
+            datasets: [
+              {
+                label: `${pair} Price (USD)`,
+                data: [
+                  ...priceData,
+                  ...Array(1).fill(null), // Заполнение места для текущей цены
+                ],
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                fill: false,
+              },
+              {
+                label: "Прогнозная цена",
+                data: [
+                  ...Array(priceData.length).fill(null), // Заполнение мест для исторических данных
+                  predictedPrice, // Используем только предсказанную цену
+                ],
+                borderColor: "rgba(255, 99, 132, 1)",
+                backgroundColor: "rgba(255, 99, 132, 0.2)",
+                borderDash: [5, 5],
+                pointRadius: 5, // Устанавливаем радиус точки
+                pointHoverRadius: 7, // Увеличиваем радиус при наведении
+                fill: false, // Не заполняем область под графиком
+              },
+            ],
+          }}
+          options={{
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                suggestedMax: Math.max(...priceData) * 1.1,
+              },
+            },
+            elements: {
+              line: {
+                tension: 0,
+              },
+            },
+          }}
+        />
+      )}
     </div>
   );
 }
