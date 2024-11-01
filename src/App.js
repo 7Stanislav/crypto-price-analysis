@@ -54,7 +54,7 @@ function App() {
         setLabels(timestamps);
       } catch (error) {
         console.error("Error fetching price history:", error);
-        setError("Ошибка при получении данных");
+        setError("Error fetching data");
       }
     };
 
@@ -71,13 +71,13 @@ function App() {
     );
 
     if (daysToForecast > 90) {
-      alert("Максимальный срок прогнозирования - 90 дней.");
+      alert("Maximum forecasting period is 90 days.");
       setLoading(false);
       return;
     }
 
     if (priceData.length < 365) {
-      alert("Недостаточно данных для обучения модели (необходимы 365 дней)");
+      alert("Insufficient data for model training (365 days required)");
       setLoading(false);
       return;
     }
@@ -108,20 +108,20 @@ function App() {
     let lastPrice = trainingData[trainingData.length - 1];
     let futurePrice = lastPrice;
 
-    // Применение отклонений с увеличением каждые 3 дня
+    // Apply deviations increasing every 3 days
     for (let i = 0; i < daysToForecast; i++) {
       const input = tf.tensor3d([[[futurePrice]]]);
       const basePrediction = model.predict(input).dataSync()[0];
 
-      const deviationPercentage = Math.min(30, Math.floor(i / 3) + 1); // Отклонение 1% каждые 3 дня, максимум 30%
+      const deviationPercentage = Math.min(30, Math.floor(i / 3) + 1); // Deviation 1% every 3 days, max 30%
       const deviationFactor = deviationPercentage / 100;
 
-      // Генерируем случайное отклонение в пределах отклонения
+      // Generate random deviation within the deviation range
       const randomDeviation =
         1 + (Math.random() * deviationFactor * 2 - deviationFactor);
       futurePrice = basePrediction * randomDeviation;
 
-      // Ограничиваем будущую цену в пределах ±30% от текущей цены
+      // Limit future price within ±30% of the current price
       const lowerBound = lastPrice * 0.7;
       const upperBound = lastPrice * 1.3;
       futurePrice = Math.max(lowerBound, Math.min(futurePrice, upperBound));
@@ -152,12 +152,12 @@ function App() {
             .split("T")[0]
         }
       />
-      <button onClick={handleForecast}>Прогнозировать</button>
+      <button onClick={handleForecast}>Forecast</button>
 
-      {loading && <p>Время до завершения расчета: {timeRemaining} секунд</p>}
+      {loading && <p>Time remaining: {timeRemaining} seconds</p>}
       {predictedPrice !== null && (
         <p>
-          Прогнозируемая цена на {futureDate} - ${predictedPrice.toFixed(2)}
+          Predicted price on {futureDate} - ${predictedPrice.toFixed(2)}
         </p>
       )}
       {error && <p style={{ color: "red" }}>{error}</p>}
@@ -167,31 +167,31 @@ function App() {
           data={{
             labels: [
               ...labels,
-              new Date(futureDate).toLocaleDateString(), // Добавляем только выбранную дату
+              new Date(futureDate).toLocaleDateString(), // Add only the selected date
             ],
             datasets: [
               {
                 label: `${pair} Price (USD)`,
                 data: [
                   ...priceData,
-                  ...Array(1).fill(null), // Заполнение места для текущей цены
+                  ...Array(1).fill(null), // Filling space for current price
                 ],
                 borderColor: "rgba(75, 192, 192, 1)",
                 backgroundColor: "rgba(75, 192, 192, 0.2)",
                 fill: false,
               },
               {
-                label: "Прогнозная цена",
+                label: "Predicted Price",
                 data: [
-                  ...Array(priceData.length).fill(null), // Заполнение мест для исторических данных
-                  predictedPrice, // Используем только предсказанную цену
+                  ...Array(priceData.length).fill(null), // Filling spaces for historical data
+                  predictedPrice, // Use only the predicted price
                 ],
                 borderColor: "rgba(255, 99, 132, 1)",
                 backgroundColor: "rgba(255, 99, 132, 0.2)",
                 borderDash: [5, 5],
-                pointRadius: 5, // Устанавливаем радиус точки
-                pointHoverRadius: 7, // Увеличиваем радиус при наведении
-                fill: false, // Не заполняем область под графиком
+                pointRadius: 5, // Set point radius
+                pointHoverRadius: 7, // Increase radius on hover
+                fill: false, // Do not fill area under the graph
               },
             ],
           }}

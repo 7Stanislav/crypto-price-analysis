@@ -1,70 +1,62 @@
-# Getting Started with Create React App
+# Crypto Price Prediction App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Project Overview
+This is a web application for predicting cryptocurrency prices. It allows users to select a cryptocurrency and a target date for prediction, then provides forecasted data based on machine learning models, including time-series algorithms like LSTM. The purpose of this project is to create a reliable tool that leverages neural networks to analyze historical data and deliver price forecasts for cryptocurrencies.
 
-## Available Scripts
+## Getting Started
 
-In the project directory, you can run:
+### Prerequisites
+Ensure you have Node.js and npm installed on your machine.
 
-### `npm start`
+### Installation
+To install the required dependencies for both client and server, run the following command in the root directory:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+npm install
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Running the Server
+The server-side code is located in server.js. To start the server, use:
+node server.js
 
-### `npm test`
+The server will run on port 5001 by default. Make sure that this port is open and accessible.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Running the Client
+The client-side application starts from App.js. For development purposes, you can start it with:
+npm start
 
-### `npm run build`
+Once started, the app will be available at http://localhost:3000.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Environment Variables
+To connect to the cryptocurrency API and configure environment settings, set up a .env file with the necessary API keys and configurations. Ensure that the API used provides at least 365 days of historical data to allow meaningful predictions.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Project Structure
+- src/: Contains client-side React components and application logic.
+- public/: Static files and assets.
+- server.js: Main server file for handling API requests.
+- package.json: Defines project dependencies and scripts.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Deployment
+For deployment, the following tools are used:
 
-### `npm run eject`
+- Nginx: Used as a reverse proxy to manage traffic between the client and server.
+- PM2: A process manager to keep the server running in the background.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+API Usage
+The application uses a free API for accessing cryptocurrency data, limited to the past 365 days. For extended historical data or additional features, consider upgrading to a premium API plan.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Features
+- Select cryptocurrency and prediction date.
+- Analyze historical data to generate predictions.
+- Display of prediction point directly on a time-series chart.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Future Enhancements
+- Incorporate additional cryptocurrencies.
+- Enable advanced machine learning models for greater accuracy.
+- Support for extended prediction timelines by using a premium data API.
 
-## Learn More
+Links
+- Source Code: [GitHub Repository](https://github.com/7Stanislav/crypto-price-analysis.git)
+- Live Project: predictproject.ru
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+License
+This project is licensed under the MIT License.

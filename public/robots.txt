@@ -1,3 +1,17 @@
-# https://www.robotstxt.org/robotstxt.html
+# robots.txt for Crypto Price Prediction App
+
 User-agent: *
-Disallow:
+Disallow: /api/
+Disallow: /server.js
+Disallow: /config/
+Disallow: /node_modules/
+Disallow: /package.json
+Disallow: /package-lock.json
+
+# Allow only the main pages to be crawled
+Allow: /$
+Allow: /src/
+Allow: /public/
+
+# Sitemap location
+Sitemap: https://predictproject.ru/sitemap.xml
