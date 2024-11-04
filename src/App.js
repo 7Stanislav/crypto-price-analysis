@@ -108,22 +108,19 @@ function App() {
     let lastPrice = trainingData[trainingData.length - 1];
     let futurePrice = lastPrice;
 
-    // Apply deviations increasing every 3 days
     for (let i = 0; i < daysToForecast; i++) {
       const input = tf.tensor3d([[[futurePrice]]]);
       const basePrediction = model.predict(input).dataSync()[0];
 
-      const deviationPercentage = Math.min(30, Math.floor(i / 3) + 1); // Deviation 1% every 3 days, max 30%
+      const deviationPercentage = Math.min(2 + (i / 90) * 48, 50);
       const deviationFactor = deviationPercentage / 100;
 
-      // Generate random deviation within the deviation range
       const randomDeviation =
         1 + (Math.random() * deviationFactor * 2 - deviationFactor);
       futurePrice = basePrediction * randomDeviation;
 
-      // Limit future price within ±30% of the current price
-      const lowerBound = lastPrice * 0.7;
-      const upperBound = lastPrice * 1.3;
+      const lowerBound = lastPrice * (1 - deviationFactor);
+      const upperBound = lastPrice * (1 + deviationFactor);
       futurePrice = Math.max(lowerBound, Math.min(futurePrice, upperBound));
     }
 
@@ -167,14 +164,14 @@ function App() {
           data={{
             labels: [
               ...labels,
-              new Date(futureDate).toLocaleDateString(), // Add only the selected date
+              new Date(futureDate).toLocaleDateString(),
             ],
             datasets: [
               {
                 label: `${pair} Price (USD)`,
                 data: [
                   ...priceData,
-                  ...Array(1).fill(null), // Filling space for current price
+                  ...Array(1).fill(null),
                 ],
                 borderColor: "rgba(75, 192, 192, 1)",
                 backgroundColor: "rgba(75, 192, 192, 0.2)",
@@ -183,15 +180,15 @@ function App() {
               {
                 label: "Predicted Price",
                 data: [
-                  ...Array(priceData.length).fill(null), // Filling spaces for historical data
-                  predictedPrice, // Use only the predicted price
+                  ...Array(priceData.length).fill(null),
+                  predictedPrice,
                 ],
                 borderColor: "rgba(255, 99, 132, 1)",
                 backgroundColor: "rgba(255, 99, 132, 0.2)",
                 borderDash: [5, 5],
-                pointRadius: 5, // Set point radius
-                pointHoverRadius: 7, // Increase radius on hover
-                fill: false, // Do not fill area under the graph
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                fill: false,
               },
             ],
           }}
